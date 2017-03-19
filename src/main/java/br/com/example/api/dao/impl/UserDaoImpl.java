@@ -55,9 +55,14 @@ public class UserDaoImpl implements UserDao {
 
 			ResultSet result = session.execute(select);
 			Row row = result.one();
+			
+			if(row==null){
+				return null;
+			}
 			User user = new User(row);
-
+			
 			return user;
+			
 		} catch (Exception e) {
 			LOG.error(e.getLocalizedMessage(), e);
 			return null;
@@ -94,6 +99,7 @@ public class UserDaoImpl implements UserDao {
 	@Override
 	public void create(User user) {
 		Session session = null;
+		
 		try {
 			session = ConnectionFactory.openSession();
 
@@ -154,7 +160,7 @@ public class UserDaoImpl implements UserDao {
 		try {
 			User user = findById(currentUser.getId());
 
-			return user.equals(user);
+			return user != null;
 
 		} catch (Exception e) {
 			LOG.error(e.getLocalizedMessage(), e);

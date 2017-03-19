@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.google.gson.Gson;
+
 import br.com.example.api.model.User;
 import br.com.example.api.service.UserService;
 
@@ -33,6 +35,7 @@ public class UserController {
 	public ResponseEntity<List<User>> getAll() {
 		try {
 			List<User> users = service.getAll();
+									
 			return new ResponseEntity<List<User>>(users, HttpStatus.OK);
 		} catch (Exception e) {
 			LOG.error(e.getLocalizedMessage(), e);
@@ -51,14 +54,17 @@ public class UserController {
 		}
 	}
 
-	@RequestMapping(method = RequestMethod.POST)
-	public ResponseEntity<Void> createUser(@RequestBody User user, UriComponentsBuilder ucBuilder) {
+	@RequestMapping(method = RequestMethod.POST, consumes="application/json")
+	public ResponseEntity<Void> createUser(@RequestBody String userString, UriComponentsBuilder ucBuilder) {
 		try {
+			Gson gson = new Gson();
+			User user = gson.fromJson(userString, User.class);
+			
 			if (service.exists(user)) {
 				LOG.info("a user with name " + user.getUsername() + " already exists");
 				return new ResponseEntity<Void>(HttpStatus.CONFLICT);
 			}
-
+			
 			service.create(user);
 
 			HttpHeaders headers = new HttpHeaders();
@@ -70,21 +76,25 @@ public class UserController {
 			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	 
-	@RequestMapping(value = "{id}", method = RequestMethod.POST)
-	public ResponseEntity<User> updateUser(@RequestBody User user) {
+		 
+	@RequestMapping(value = "{id}", method = RequestMethod.PUT)
+	public ResponseEntity<User> updateUser(@PathVariable("id") int id, @RequestBody String userString) {
 		try {
-			User currentUser = service.findById(user.getId());
-
+			
+			Gson gson = new Gson();
+			User user = gson.fromJson(userString, User.class);
+			
+			User currentUser = service.findById(id);
+			
+			
 			if (currentUser == null) {
 				LOG.info("User with id {} not found", user.getId());
 				return new ResponseEntity<User>(HttpStatus.NOT_FOUND);
 			}
 
-			currentUser.setId(user.getId());
 			currentUser.setUsername(user.getUsername());
-
-			service.update(user);
+			service.update(currentUser);
+			
 			return new ResponseEntity<User>(currentUser, HttpStatus.OK);
 
 		} catch (Exception e) {
